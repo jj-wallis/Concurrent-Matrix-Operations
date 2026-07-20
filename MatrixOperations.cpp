@@ -1,14 +1,13 @@
 #include <vector>
-#include <stdexcept>
 #include <thread>
-#include <iostream>
-#include <iomanip>
-#include <future>
+#include <memory>
 #include <algorithm>
 
 #include "MatrixOperations.h"
 #include "FileWrite.h"
 #include "ThreadPool.h"
+
+#define PARALLEL_MODE 1
 
 // =================================================================================
 // Forward Declarations
@@ -25,6 +24,14 @@ void matrixOperationsInit(std::vector<std::vector<double>>* srcMatrix, std::vect
     // Get dimensions of the src matrix
     const int dim = srcMatrix->size();
 
+    // Allocate memory for flattened arrays on the heap to allow for large matrices
+    // Allocate memory for flattened arrays using smart pointers to guarantee exception safety
+    std::unique_ptr<double[]> flatSrc = std::make_unique<double[]>(dim * dim); // Source matrix
+    std::unique_ptr<double[]> flatZS = std::make_unique<double[]>(dim * dim); // Result of zone sum
+    std::unique_ptr<double[]> flatZS_transposed = std::make_unique<double[]>(dim * dim); // Result of zone sum and transpose
+
+#if PARALLEL_MODE
+
     // Spawn a number of threads equal to the machine's number of cores
     // Static ensures these are created once during the first function call
     static const int numThreads = std::thread::hardware_concurrency();
@@ -37,12 +44,6 @@ void matrixOperationsInit(std::vector<std::vector<double>>* srcMatrix, std::vect
     // Calculate the workload distribution
     const int rowsPerThread = dim / numThreads;
     const int extraRows = dim % numThreads;
-
-    // Allocate memory for flattened arrays on the heap to allow for large matrices
-    // Allocate memory for flattened arrays using smart pointers to guarantee exception safety
-    std::unique_ptr<double[]> flatSrc = std::make_unique<double[]>(dim * dim); // Source matrix
-    std::unique_ptr<double[]> flatZS = std::make_unique<double[]>(dim * dim); // Result of zone sum
-    std::unique_ptr<double[]> flatZS_transposed = std::make_unique<double[]>(dim * dim); // Result of zone sum and transpose
 
     // ===================================================
     // Flatten 2D vector to 1D array
@@ -88,6 +89,25 @@ void matrixOperationsInit(std::vector<std::vector<double>>* srcMatrix, std::vect
     }
     // Block main thread
     syncBarrier.count_down_and_wait();
+
+#else // Sequential execution
+
+    // ===================================================
+    // 1. Flatten 2D vector to 1D array
+    // ===================================================
+    flattenWorker(srcMatrix, flatSrc.get(), 0, dim, dim, nullptr);
+
+    // ===================================================
+    // 2. Fused Zone Sum and Transpose 
+    // ===================================================
+    zoneSumTransposeWorker(flatSrc.get(), flatZS.get(), flatZS_transposed.get(), 0, dim, dim, nullptr);
+
+    // ===================================================
+    // 3. Blocked Matrix Multiplication 
+    // ===================================================
+    matrixMultiplyWorker(flatZS.get(), flatZS_transposed.get(), dstMatrix, 0, dim, dim, nullptr);
+
+#endif
 }
 
 // =================================================================================
@@ -95,7 +115,10 @@ void matrixOperationsInit(std::vector<std::vector<double>>* srcMatrix, std::vect
 // Reorganizes 2D vector matrix into a 1D array 
 // to maximise cache hits for subsequent operations
 // =================================================================================
-void flattenWorker(const std::vector<std::vector<double>>* srcMatrix, double* flatSrc, const int startRow, const int endRow, const int dim, barrier* syncBarrier)
+void flattenWorker(const std::vector<std::vector<double>>* srcMatrix, double* flatSrc, 
+    const int startRow, const int endRow, 
+    const int dim, 
+    barrier* syncBarrier)
 {
     for (int i = startRow; i < endRow; i++)
     {
@@ -113,7 +136,10 @@ void flattenWorker(const std::vector<std::vector<double>>* srcMatrix, double* fl
     }
 
     // Decrement the barrier count and wait for the main thread to catch up
-    syncBarrier->count_down_and_wait();
+    if (syncBarrier != nullptr)
+    {
+        syncBarrier->count_down_and_wait();
+    }
 }
 
 // =================================================================================
@@ -121,7 +147,10 @@ void flattenWorker(const std::vector<std::vector<double>>* srcMatrix, double* fl
 // Computes a 3x3 zone sum outputting a standard 
 // and transposed matrix, setting up the multiplication phase
 // =================================================================================
-void zoneSumTransposeWorker(const double* flatSrc, double* flatZS, double* flatZS_transposed, const int startRow, const int endRow, const int dim, barrier* syncBarrier)
+void zoneSumTransposeWorker(const double* flatSrc, double* flatZS, double* flatZS_transposed, 
+    const int startRow, const int endRow, 
+    const int dim, 
+    barrier* syncBarrier)
 {
     for (int i = startRow; i < endRow; i++) // Row
     {
@@ -158,7 +187,10 @@ void zoneSumTransposeWorker(const double* flatSrc, double* flatZS, double* flatZ
     }
 
     // Decrement the barrier count and wait
-    syncBarrier->count_down_and_wait();
+    if (syncBarrier != nullptr)
+    {
+        syncBarrier->count_down_and_wait();
+    }
 }
 
 // =================================================================================
@@ -166,8 +198,7 @@ void zoneSumTransposeWorker(const double* flatSrc, double* flatZS, double* flatZ
 // Processes a specific tile. 'inline' embeds this directly, 
 // preventing function-call overhead
 // =================================================================================
-inline void matrixMultiplyHelper(const double* flatZS, const double* flatZS_transposed,
-    std::vector<std::vector<double>>* dstMatrix,
+inline void matrixMultiplyHelper(const double* flatZS, const double* flatZS_transposed, std::vector<std::vector<double>>* dstMatrix,
     const int iTile, const int iMax,
     const int jTile, const int jMax,
     const int kTile, const int kMax,
@@ -236,7 +267,10 @@ inline void matrixMultiplyHelper(const double* flatZS, const double* flatZS_tran
 // Multiplies flatZS by flatZS_transposed using L1 cache-sized tiles
 // writing the result directly into the final dstMatrix.
 // =================================================================================
-void matrixMultiplyWorker(const double* flatZS, const double* flatZS_transposed, std::vector<std::vector<double>>* dstMatrix, const int startRow, const int endRow, const int dim, barrier* syncBarrier)
+void matrixMultiplyWorker(const double* flatZS, const double* flatZS_transposed, std::vector<std::vector<double>>* dstMatrix, 
+    const int startRow, const int endRow, 
+    const int dim, 
+    barrier* syncBarrier)
 {
     // Define the tile size to fit data within the CPU's L1 cache 
     const int tile_size = 64;
@@ -270,6 +304,9 @@ void matrixMultiplyWorker(const double* flatZS, const double* flatZS_transposed,
         }
     }
 
-    // Decrement the synchronization barrier and wait for all other threads to finish their multiplication
-    syncBarrier->count_down_and_wait();
+    // Decrement the barrier count and wait
+    if (syncBarrier != nullptr)
+    {
+        syncBarrier->count_down_and_wait();
+    }
 }
