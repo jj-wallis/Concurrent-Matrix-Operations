@@ -7,8 +7,6 @@
 #include "FileWrite.h"
 #include "ThreadPool.h"
 
-#define PARALLEL_MODE 1
-
 // =================================================================================
 // Forward Declarations
 // =================================================================================
@@ -93,17 +91,17 @@ void matrixOperationsInit(std::vector<std::vector<double>>* srcMatrix, std::vect
 #else // Sequential execution
 
     // ===================================================
-    // 1. Flatten 2D vector to 1D array
+    // Flatten 2D vector to 1D array
     // ===================================================
     flattenWorker(srcMatrix, flatSrc.get(), 0, dim, dim, nullptr);
 
     // ===================================================
-    // 2. Fused Zone Sum and Transpose 
+    // Fused Zone Sum and Transpose 
     // ===================================================
     zoneSumTransposeWorker(flatSrc.get(), flatZS.get(), flatZS_transposed.get(), 0, dim, dim, nullptr);
 
     // ===================================================
-    // 3. Blocked Matrix Multiplication 
+    // Blocked Matrix Multiplication 
     // ===================================================
     matrixMultiplyWorker(flatZS.get(), flatZS_transposed.get(), dstMatrix, 0, dim, dim, nullptr);
 

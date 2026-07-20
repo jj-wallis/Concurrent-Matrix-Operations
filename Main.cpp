@@ -1,12 +1,13 @@
 #include <iostream>
 #include <vector>
-#include <cstdlib>
 #include <chrono>
 #include <string>
 #include <limits>
 #include <ios>
 #include <cctype>
 #include <filesystem>
+#include <iomanip>
+#include <thread>
 
 #include "RandomMatrixGenerator.h"
 #include "FileRead.h"
@@ -15,18 +16,32 @@
 
 int main()
 {
-    // Declare matrix size parameter
+    // =================================================================================
+    // Application Header & Mode Readout
+    // =================================================================================
+    std::cout << "==================================================\n";
+    std::cout << "           CONCURRENT MATRIX OPERATIONS           \n";
+    std::cout << "==================================================\n";
+
+#if PARALLEL_MODE
+    std::cout << "Mode: MULTITHREADED (Parallel)\n";
+    std::cout << "Hardware Concurrency: " << std::thread::hardware_concurrency() << " Threads Detected\n";
+#else
+    std::cout << "Mode: SEQUENTIAL (Baseline)\n";
+    std::cout << "Hardware Concurrency: Single Thread Execution\n";
+#endif
+    std::cout << "--------------------------------------------------\n";
+
+    // =================================================================================
+    // Data Initialization
+    // =================================================================================
     int dim = 0;
     std::string readFromFileInput;
-    std::string input;
-
     std::vector<std::vector<double>> srcMatrix;
 
-    // Ask to read from file
     std::cout << "Do you want to read the matrix from a file (y/n): ";
     std::cin >> readFromFileInput;
 
-    
     if (readFromFileInput == "y" || readFromFileInput == "Y")
     {
         std::string fileName;
@@ -43,111 +58,97 @@ int main()
         srcMatrix = fileRead(fileName);
         dim = srcMatrix.size();
 
-        // Check the matrix was succesfully populated
         if (dim == 0) {
-            std::cout << "Matrix reading failed or file is empty. Exiting program." << std::endl;
+            std::cout << "[ERROR] Matrix reading failed or file is empty. Exiting program.\n";
             return 1;
         }
     }
-    
-    else 
+    else
     {
-    // Asks the user the size of a random matrix
-    // At the end of this block the srcMatrix variable will contain the matrix to be used in the operations
-    // And the dim variable will contain the size of the matrix
         std::string input;
 
-        // Ask user for matrix size
+        // Ask user for matrix size with robust validation
         do {
             dim = 0;
-            input = ""; // Reset input string for each iteration
+            input = "";
 
             std::cout << "Enter matrix size greater than 0: ";
             std::cin >> input;
-            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Ignore any leftover characters in the input buffer
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
-            // Check if the input is a valid integer
             try
             {
                 dim = std::stoi(input);
             }
             catch (std::invalid_argument&)
             {
-                std::cout << "Invalid input. Please enter a positive integer." << std::endl;
-                continue; // Skip to the next iteration of the loop
+                std::cout << "[ERROR] Invalid input. Please enter a positive integer.\n";
+                continue;
             }
             catch (std::out_of_range&)
             {
-                std::cout << "Input is out of range. Please enter a positive integer smaller than " << INT_MAX << "." << std::endl;
-                continue; // Skip to the next iteration of the loop
+                std::cout << "[ERROR] Input is out of range. Please enter a positive integer smaller than " << INT_MAX << ".\n";
+                continue;
             }
 
-            // Check if the input is a positive integer
             if (dim <= 0)
             {
-                std::cout << "Invalid input. Please enter a positive integer." << std::endl;
+                std::cout << "[ERROR] Invalid input. Please enter a positive integer.\n";
             }
 
-        } while (dim <= 0); // Ensure the input is a positive integer
+        } while (dim <= 0);
 
         // Generate a random matrix of the specified size
-        srcMatrix = randomMatrixGenerator(dim); //generate random matrix
+        srcMatrix = randomMatrixGenerator(dim);
     }
 
-    // Print out matrix size for user knowledge
-    std::cout << "Matrix size: " << dim << std::endl;
+    // =================================================================================
+    // Execution & Benchmarking
+    // =================================================================================
+    std::cout << "\n[INFO] Initializing " << dim << " x " << dim << " matrices...\n";
+    std::cout << "[INFO] Running 10 benchmark iterations...\n\n";
 
-    // Declare final matrix to store data after computations
     std::vector<std::vector<double>> finalMatrix;
+    double totalTime = 0.0;
+    const int iterations = 10;
 
-    // Declare a vector to store time intervals from measurements
-    std::vector<double> timeIntervals;
-
-    // Repeat the operations 10 times to get an averaged execution time
-    for (int i = 0; i < 10; i++)
+    for (int i = 1; i <= iterations; i++)
     {
-        // Clear and reinitialise the final matrix to ensure it is empty before each iteration
+        // Clear and reinitialise the final matrix
         finalMatrix.clear();
-        finalMatrix.resize(dim); // Resize the final matrix to the same size as the source matrix
+        finalMatrix.resize(dim);
         for (int j = 0; j < dim; j++)
         {
-            finalMatrix[j].resize(dim); // Resize each row of the final matrix to the same size as the source matrix
+            finalMatrix[j].resize(dim);
         }
 
-        // Print the iteration count
-        std::cout << "Iteration: " << i + 1 << std::endl;
-
-        // Start the chronometer to measure execution time
+        // Start chronometer
         std::chrono::time_point<std::chrono::high_resolution_clock> start = std::chrono::high_resolution_clock::now();
 
         // Perform the operations
         matrixOperationsInit(&srcMatrix, &finalMatrix);
 
-        // Stop the chronometer at the end of the operations to capture the execution time
+        // Stop chronometer
         std::chrono::time_point<std::chrono::high_resolution_clock> stop = std::chrono::high_resolution_clock::now();
 
-        // The execution time is computed as final time minus start time
+        // Calculate and accumulate interval
         double interval = (std::chrono::duration<double, std::milli>(stop - start)).count();
+        totalTime += interval;
 
-        // The time interval is queued in a vector to allow for the computation of an average
-        timeIntervals.push_back(interval);
+        // Print formatted runtime dynamically
+        std::cout << "Run " << std::setw(2) << i << "/" << iterations
+            << " ... " << std::fixed << std::setprecision(2) << interval << " ms\n";
     }
 
-    // Compute the average of the time intervals measured earlier
-    // Set a cumulative variable to 0 to sum all the intervals
-    double sum = 0;
+    // =================================================================================
+    // Results & File Output
+    // =================================================================================
+    double averageTime = totalTime / iterations;
 
-    // Loop through all the intervals in the vector and sum them in the cumulative variable above
-    for (int i = 0; i < timeIntervals.size(); i++)
-    {
-        std::cout << timeIntervals[i] << " ms" << std::endl;
-        sum += timeIntervals[i];
-    }
+    std::cout << "\n--------------------------------------------------\n";
+    std::cout << ">> FINAL AVERAGE: " << std::fixed << std::setprecision(2) << averageTime << " ms\n";
+    std::cout << "--------------------------------------------------\n";
 
-    // Print the average value of all the intervales
-    std::cout << "Average: " << sum / timeIntervals.size() << " ms" << std::endl;
-
-    // Ask to write to file
     std::string writeChoice;
     std::cout << "Do you want to write the initial and final matrices to file? (y/n): ";
     std::cin >> writeChoice;
@@ -158,16 +159,12 @@ int main()
         std::cout << "Enter the file name (without extension): ";
         std::cin >> fileNamePrefix;
 
-        // Save both matrices.
+        // Save both matrices
         fileWrite(fileNamePrefix + "_src.txt", &srcMatrix);
         fileWrite(fileNamePrefix + "_dst.txt", &finalMatrix);
 
-        std::cout << "Files successfully written." << std::endl;
+        std::cout << "[SUCCESS] Files successfully written.\n";
     }
 
-    // Terminate execution without errors
-    return 0;
-
-    // Terminate execution without errors
     return 0;
 }
