@@ -4,3 +4,6 @@
 
 
 # Results
+
+Acknowledgments:
+This project utilizes a C++ ThreadPool library originally created by Jakob Progsch and Václav Zeman.
