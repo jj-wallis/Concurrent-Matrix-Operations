@@ -72,14 +72,14 @@ Matrix multiplication combines two matrices by calculating the sum of the produc
 
 ## Performance Benchmarks
 
-The following table outlines the average execution time (calculated across 10 consecutive runs) for processing a [Insert Size, e.g., 1024 x 1024] matrix. 
+The following table outlines the average execution time (calculated across 10 consecutive runs) for processing a 1024 x 1024 matrix. 
 
 | Implementation | Execution Time (ms) | Speed-up |
 | :--- | :--- | :--- |
-| **Sequential (Baseline)** | [0.00] ms | 1.00x |
-| **Parallel Version **| [0.00] ms | [0.00]x |
+| **Sequential (Baseline)** | 274.767 ms | 1.00x |
+| **Parallel Version**| 52.132 ms | 5.27x |
 
-*Hardware Context: Benchmarks were recorded on a [Insert your CPU model here, e.g., AMD Ryzen 7, 8 Cores / 16 Threads] system.*
+*Hardware Context: Benchmarks were recorded on a [AMD Ryzen 5, 6 Cores / 12 Threads] system.*
 
 ### Trade-off Analysis
 *   **Thread Spawning Overhead:** [Briefly discuss the time it takes to create threads versus the time saved by the parallel computation...]
