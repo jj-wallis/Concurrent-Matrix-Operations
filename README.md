@@ -1,5 +1,7 @@
 # Concurrent-Matrix-Operations
 
+<img width="1000" height="700" alt="matrix_benchmark" src="https://github.com/user-attachments/assets/a8bddf81-4c3b-4054-8868-b879f997ff6f" />
+
 A high performance C++ application designed to three core matrix operations: transposition, zone summation and a self multiplication. These three operations are executed sequentially upon an input matrix; however each operation has been parallelised to accelerate execution. The aim of parallel computation is to solve intensive problems with a reduced computation time and efficiently handle large-scale data processing tasks. The three operations have been defined as follows: 
 
 ### 1. Matrix Transposition
