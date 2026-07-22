@@ -81,11 +81,14 @@ The following table outlines the average execution time (calculated across 10 co
 | **Sequential (Baseline)** | 274.767 ms | 1.00x |
 | **Parallel Version**| 52.132 ms | 5.27x |
 
-*Hardware Context: Benchmarks were recorded on a [AMD Ryzen 5, 6 Cores / 12 Threads] system.*
+*Hardware Context: Benchmarks were recorded on an AMD Ryzen 5, 6 Cores / 12 Threads system.*
 
 ### Trade-off Analysis
-*   **Thread Spawning Overhead:** [Briefly discuss the time it takes to create threads versus the time saved by the parallel computation...]
-*   **Memory Access Patterns:** [Briefly discuss how your optimizations, such as loop merging or L1 cache awareness, reduced execution time...]
+*   **Thread Spawning Overhead:** While parallel execution provides massive speed benefits for large datasets, managing threads introduces an OS-level performance cost. Spawning and destroying a thread requires system calls and context switching. For very small matrices, this overhead can make the multithreaded version slower than a sequential solution. However, as matrix dimensions scale, the computational workload dwarfs thread creation cost, resulting in increased performance for multithreaded architectures.
+*   **Memory Access Patterns & Contiguity::** Standard matrix multiplication using 2D std::vector structures forces the CPU to chase pointers across fragmented memory, incurring cache misses. To resolve this, the algorithm first flattens 2D structures into contiguous 1D arrays. Furthermore, the second matrix (used for self multiplication) is explicitly transposed during the zone sum phase, ensuring that the subsequent dot-products can be calculated using strictly sequential, hardware-friendly row-major reads.
+*   L1 Cache Tiling: Even with contiguous and transposed memory, processing entire rows of massive matrices linearly can quickly overflow the CPU's cache boundaries. To prevent this, the core multiplication algorithm utilises a 64x64 blocked tiling technique. By subdividing the workload into localised blocks, the algorithm restricts active working data to fit entirely within L1 cache.
+
+## Build Instructions
 
 ## Acknowledgments
 This project utilizes a C++ ThreadPool library originally created by Jakob Progsch and Václav Zeman.
