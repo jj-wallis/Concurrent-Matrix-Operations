@@ -1,7 +1,7 @@
 #include <fstream>
 #include <iostream>
 
-#include "fileRead.h"
+#include "FileRead.h"
 
 // Reading matrix from file
 std::vector<std::vector<double>> fileRead(const std::string FileName)

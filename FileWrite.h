@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iomanip>
 #include <algorithm>
+#include <cmath>
 
 template <class type> int getMaxDigitCount(const std::vector<std::vector<type>>* srcMatrix);
 
