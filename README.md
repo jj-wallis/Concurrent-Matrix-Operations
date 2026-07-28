@@ -102,6 +102,7 @@ cd Concurrent-Matrix-Operations
 ```
    
 2. **Compile the source code:**
+\n   
 *Standard Build (Recommended for compatibility):*
 ```bash
 g++ *.cpp -o matrix_operations -pthread -O3
@@ -110,11 +111,11 @@ g++ *.cpp -o matrix_operations -pthread -O3
 ```bash
 g++ *.cpp -o matrix_operations -pthread -O3 -march=native
 ```
-3. **Compiler flags explained**
+**Compiler flags explained**
 * **`-O3` (Level 3 Optimisation):** Instructs the `g++` compiler to aggressively apply available optimisation techniques. These include loop unrolling, vectorisation, and function inlining to prioritise maximum execution speed over compilation time and binary size.
 * **`-march=native` (Architecture Native):** Instructs the compiler to tune the generated machine code specifically for the CPU architecture of the machine currently compiling it. This allows the executable to utilise hardware-specific instruction sets for maximum throughput, though it makes the resulting binary non-portable to different CPU architectures.
 
-4. **Run the executable:**
+3. **Run the executable:**
 
 ## Acknowledgments
 This project utilizes a C++ ThreadPool library originally created by Jakob Progsch and Václav Zeman.
