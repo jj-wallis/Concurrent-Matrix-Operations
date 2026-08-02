@@ -71,6 +71,7 @@ Matrix multiplication combines two matrices by calculating the sum of the produc
 | :---: | :---: |
 | (a3 * b1) + (a4 * b3) | (a3 * b2) + (a4 * b4) |
 
+---
 
 ## Performance Benchmarks
 
@@ -88,37 +89,50 @@ The following table outlines the average execution time (calculated across 10 co
 *   **Memory Access Patterns & Contiguity:** Standard matrix multiplication using 2D std::vector structures forces the CPU to chase pointers across fragmented memory, incurring cache misses. To resolve this, the algorithm first flattens 2D structures into contiguous 1D arrays. Furthermore, the second matrix (used for self multiplication) is explicitly transposed during the zone sum phase, ensuring that the subsequent dot-products can be calculated using strictly sequential, hardware-friendly row-major reads.
 *   **L1 Cache Tiling:** Even with contiguous and transposed memory, processing entire rows of massive matrices linearly can quickly overflow the CPU's cache boundaries. To prevent this, the core multiplication algorithm utilises a 64x64 blocked tiling technique. By subdividing the workload into localised blocks, the algorithm restricts active working data to fit entirely within L1 cache.
 
-### Build Instructions
+## Build Instructions
 
 #### Prerequisites
-* A modern C++ compiler (`g++` for Linux)
+* A modern C++ compiler (MSVC for Windows, `g++` for Linux)
+* CMake (Version 3.15+)
 * Git
 
-#### Linux
+#### Option A: Cross-Platform Build (Recommended - CMake)
+Works identically across Windows, Linux, and macOS. It will automatically apply hardware-specific optimisations (`-O3 -march=native`) where applicable.
+
 1. **Clone the repository:**
    ```bash
    git clone https://github.com/jj-wallis/Concurrent-Matrix-Operations.git
    cd Concurrent-Matrix-Operations
    ```
-
-2. **Compile the source code:**
-   *Standard Build (Recommended for compatibility):*
+2. **Configure the build:**
    ```bash
-   g++ *.cpp -o matrix_operations -pthread -O3
+   cmake -B build -DCMAKE_BUILD_TYPE=Release
    ```
-   *Maximum Performance Build (Hardware Specific):*
+3. **Compile the binary:**
    ```bash
-   g++ *.cpp -o matrix_operations -pthread -O3 -march=native
+   cmake --build build --config Release
    ```
+4. **Run the executable:**
+   * **Linux/macOS:** `./build/matrix_operations`
+   * **Windows:** `.\build\Release\matrix_operations.exe`
 
-3. **Compiler flags explained:**
+#### Option B: Direct GCC Compilation (Linux Only)
+If you prefer to bypass CMake on a Linux environment, you can compile directly using the GNU compiler:
+```bash
+g++ *.cpp -o matrix_operations -pthread -O3 -march=native
+./matrix_operations
+```
+
+**Compiler flags explained:**
    * **`-O3` (Level 3 Optimisation):** Instructs the `g++` compiler to aggressively apply available optimisation techniques. These include loop unrolling, vectorisation, and function inlining to prioritise maximum execution speed over compilation time and binary size.
    * **`-march=native` (Architecture Native):** Instructs the compiler to tune the generated machine code specifically for the CPU architecture of the machine currently compiling it. This allows the executable to utilise hardware-specific instruction sets for maximum throughput, though it makes the resulting binary non-portable to different CPU architectures.
 
-4. **Run the executable:**
-   ```bash
-   ./matrix_operations
-   ```
+#### Option C: Visual Studio (Windows Only)
+Modern Visual Studio natively supports CMake. 
+1. Open Visual Studio and select `File > Open > Folder...`
+2. Select the cloned `Concurrent-Matrix-Operations` folder.
+3. Visual Studio will automatically detect the `CMakeLists.txt` file. 
+4. Select `Release` from the configuration dropdown in the toolbar and click the green `Play` button to build and run.
 
 ## Acknowledgments
 This project utilizes a C++ ThreadPool library originally created by Jakob Progsch and Václav Zeman.
