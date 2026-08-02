@@ -7,8 +7,11 @@ project(ConcurrentMatrixOperations VERSION 1.0.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Gather all C++ source files
-file(GLOB SOURCES "*.cpp")
+# Tell CMake where to find the header files
+include_directories(include)
+
+# Gather all C++ source files from the src directory (instead of the root)
+file(GLOB SOURCES "src/*.cpp")
 
 # Create the executable target
 add_executable(matrix_operations ${SOURCES})
