@@ -4,7 +4,7 @@
 
 A high-performance C++ application implementing three core matrix operations: transposition, zone summation, and self-multiplication. These three operations are executed sequentially on an input matrix, with each operation parallelised to accelerate execution. The aim of parallel computation is to solve intensive problems in reduced time and efficiently handle large-scale data processing tasks. The three operations are defined as follows:
 
-### 1. Matrix Transposition
+## 1. Matrix Transposition
 Matrix transposition reflects a matrix across its main diagonal, converting an m x n matrix into an n x m matrix by swapping its rows with its columns.
 
 **Example:**
@@ -23,9 +23,7 @@ Matrix transposition reflects a matrix across its main diagonal, converting an m
 | 3 | 7 | 11 | 15 |
 | 4 | 8 | 12 | 16 |
 
----
-
-### 2. Zone Sum
+## 2. Zone Sum
 The value of a single cell in the source matrix is summed with its neighbouring cells in the destination
 matrix. Corner values in the destination matrix result from the sum of the corner value and its three
 neighbours from the source matrix. Values along the sides of the destination matrix are the result of the
@@ -49,9 +47,7 @@ The destination matrix retains the same size as the source matrix.
 | 99 | 99 | 149 | 50 |
 | 0 | 0 | 50 | 50 |
 
----
-
-### 3. Matrix Multiplication
+## 3. Matrix Multiplication
 Matrix multiplication combines two matrices by calculating the sum of the products of corresponding elements from the rows of the first matrix and the columns of the second. 
 
 **Example:**
@@ -89,7 +85,9 @@ The following table outlines the average execution time (calculated across 10 co
 *   **Memory Access Patterns & Contiguity:** Standard matrix multiplication using 2D std::vector structures forces the CPU to chase pointers across fragmented memory, incurring cache misses. To resolve this, the algorithm first flattens 2D structures into contiguous 1D arrays. Furthermore, the second matrix (used for self multiplication) is explicitly transposed during the zone sum phase, ensuring that the subsequent dot-products can be calculated using strictly sequential, hardware-friendly row-major reads.
 *   **L1 Cache Tiling:** Even with contiguous and transposed memory, processing entire rows of massive matrices linearly can quickly overflow the CPU's cache boundaries. To prevent this, the core multiplication algorithm utilises a 64x64 blocked tiling technique. By subdividing the workload into localised blocks, the algorithm restricts active working data to fit entirely within L1 cache.
 
-## Build Instructions
+---
+
+## Installation & Setup
 
 #### Prerequisites
 * A modern C++ compiler (MSVC for Windows, `g++` for Linux)
@@ -133,6 +131,8 @@ Modern Visual Studio natively supports CMake.
 2. Select the cloned `Concurrent-Matrix-Operations` folder.
 3. Visual Studio will automatically detect the `CMakeLists.txt` file. 
 4. Select `Release` from the configuration dropdown in the toolbar and click the green `Play` button to build and run.
+
+---
 
 ## Acknowledgments
 This project utilizes a C++ ThreadPool library originally created by Jakob Progsch and Václav Zeman.
