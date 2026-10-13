@@ -94,7 +94,7 @@ The following table outlines the average execution time (calculated across 10 co
 * CMake (Version 3.15+)
 * Git
 
-#### Option A: Cross-Platform Build (Recommended - CMake)
+#### Option A: Cross-Platform Build (Recommended)
 Works identically across Windows, Linux, and macOS. It will automatically apply hardware-specific optimisations (`-O3 -march=native`) where applicable.
 
 1. **Clone the repository:**
@@ -114,7 +114,7 @@ Works identically across Windows, Linux, and macOS. It will automatically apply 
    * **Linux/macOS:** `./build/matrix_operations`
    * **Windows:** `.\build\Release\matrix_operations.exe`
 
-#### Option B: Direct GCC Compilation (Linux Only)
+#### Option B: Direct G++ Compilation (Linux)
 If you prefer to bypass CMake on a Linux environment, you can compile directly using the GNU compiler:
 ```bash
 g++ *.cpp -o matrix_operations -pthread -O3 -march=native
@@ -122,15 +122,8 @@ g++ *.cpp -o matrix_operations -pthread -O3 -march=native
 ```
 
 **Compiler flags explained:**
-   * **`-O3` (Level 3 Optimisation):** Instructs the `g++` compiler to aggressively apply available optimisation techniques. These include loop unrolling, vectorisation, and function inlining to prioritise maximum execution speed over compilation time and binary size.
+   * **`-O3` (Level 3 Optimisation):** Instructs the `g++` compiler to apply available optimisation techniques. These include loop unrolling, vectorisation, and function inlining to prioritise maximum execution speed over compilation time and binary size.
    * **`-march=native` (Architecture Native):** Instructs the compiler to tune the generated machine code specifically for the CPU architecture of the machine currently compiling it. This allows the executable to utilise hardware-specific instruction sets for maximum throughput, though it makes the resulting binary non-portable to different CPU architectures.
-
-#### Option C: Visual Studio (Windows Only)
-Modern Visual Studio natively supports CMake. 
-1. Open Visual Studio and select `File > Open > Folder...`
-2. Select the cloned `Concurrent-Matrix-Operations` folder.
-3. Visual Studio will automatically detect the `CMakeLists.txt` file. 
-4. Select `Release` from the configuration dropdown in the toolbar and click the green `Play` button to build and run.
 
 ---
 
