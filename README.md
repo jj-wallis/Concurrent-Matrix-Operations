@@ -2,7 +2,7 @@
 
 <img width="1000" height="700" alt="matrix_benchmark" src="https://github.com/user-attachments/assets/a8bddf81-4c3b-4054-8868-b879f997ff6f" />
 
-A high-performance C++ application implementing three core matrix operations: transposition, zone summation, and self-multiplication. These three operations are executed sequentially on an input matrix, with each operation parallelised to accelerate execution. The aim of parallel computation is to solve intensive problems in reduced time and efficiently handle large-scale data processing tasks. The three operations are defined as follows:
+A high-performance C++ application implementing three core matrix operations: transposition, zone summation, and self-multiplication. Each operation has been parallelised to accelerate execution. The three operations are defined as follows:
 
 ## 1. Matrix Transposition
 Matrix transposition reflects a matrix across its main diagonal, converting an m x n matrix into an n x m matrix by swapping its rows with its columns.
