@@ -193,8 +193,6 @@ void zoneSumTransposeWorker(const double* flatSrc, double* flatZS, double* flatZ
 
 // =================================================================================
 // Helper: Matrix Multiplication Core Logic
-// Processes a specific tile. 'inline' embeds this directly, 
-// preventing function-call overhead
 // =================================================================================
 inline void matrixMultiplyHelper(const double* flatZS, const double* flatZS_transposed, std::vector<std::vector<double>>* dstMatrix,
     const int iTile, const int iMax,
@@ -205,10 +203,9 @@ inline void matrixMultiplyHelper(const double* flatZS, const double* flatZS_tran
     // Iterate through the rows of the current tile
     for (int i = iTile; i < iMax; i++)
     {
-        // Extract raw pointer to the destination row
+        // Raw pointer to the destination row
         double* destRow = (*dstMatrix)[i].data();
-
-        // Calculate the base pointer for the current row in the source matrix
+        // Base pointer for the current row in the source matrix
         const double* rowA = &flatZS[i * dim];
 
         int j = jTile; // Column tracking
@@ -217,36 +214,33 @@ inline void matrixMultiplyHelper(const double* flatZS, const double* flatZS_tran
         // This improves the compute to memory fetch ratio by reusing loaded data
         for (; j <= jMax - 4; j += 4)
         {
-            // Get pointers to the 4 corresponding columns stored as rows in the transposed matrix
+            // Get pointers to 4 corresponding columns stored
             const double* rowB0 = &flatZS_transposed[(j + 0) * dim];
             const double* rowB1 = &flatZS_transposed[(j + 1) * dim];
             const double* rowB2 = &flatZS_transposed[(j + 2) * dim];
             const double* rowB3 = &flatZS_transposed[(j + 3) * dim];
 
-            // Initialise accumulators. Keeping these local causes the compiler to use CPU registers
+            // Initialise accumulators
             double sum0 = 0.0, sum1 = 0.0, sum2 = 0.0, sum3 = 0.0;
 
             // Compute the dot product for this specific tile segment
             for (int k = kTile; k < kMax; k++)
             {
-                // Load the value from Matrix A once from the L1 cache
                 double a = rowA[k];
-
-                // Reuse the loaded value 'a' 4 times in the registers
                 sum0 += a * rowB0[k];
                 sum1 += a * rowB1[k];
                 sum2 += a * rowB2[k];
                 sum3 += a * rowB3[k];
             }
 
-            // Direct sequential writes to the destination matrix
+            // Write to the destination matrix
             destRow[j + 0] += sum0;
             destRow[j + 1] += sum1;
             destRow[j + 2] += sum2;
             destRow[j + 3] += sum3;
         }
 
-        // Edge Case Cleanup: Handle any remaining columns if the tile width isn't a multiple of 4
+        // Handle any remaining columns if the tile width isn't a multiple of 4
         for (; j < jMax; j++)
         {
             const double* rowB = &flatZS_transposed[j * dim];
@@ -282,20 +276,20 @@ void matrixMultiplyWorker(const double* flatZS, const double* flatZS_transposed,
     // Iterate over the matrix in tiles
     for (int iTile = startRow; iTile < endRow; iTile += tile_size) // Row coordinate
     {
-        // Clamp the row tile to prevent out-of-bounds access
+        // Clamp the row tile to prevent out of bounds access
         const int iMax = std::min(iTile + tile_size, endRow);
 
         for (int jTile = 0; jTile < dim; jTile += tile_size) // Col coordinate
         {
-            // Clamp the column tile boundary
+            // Clamp the column tile
             const int jMax = std::min(jTile + tile_size, dim);
 
             for (int kTile = 0; kTile < dim; kTile += tile_size) // Dot product 
             {
-                // Clamp the dot-product tile boundary
+                // Clamp the dot-product tile
                 const int kMax = std::min(kTile + tile_size, dim);
 
-                // Pass the tile dimensions to the compute helper
+                // Pass the tile dimensions to the helper
                 matrixMultiplyHelper(flatZS, flatZS_transposed, dstMatrix,
                     iTile, iMax, jTile, jMax, kTile, kMax, dim);
             }
