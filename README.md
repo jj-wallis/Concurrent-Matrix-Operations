@@ -43,7 +43,7 @@ Each cell in the destination matrix contains the sum of the corresponding cell i
 | 0 | 0 | 50 | 50 |
 
 ## 3. Matrix Multiplication
-Matrix multiplication combines two matrices by calculating the sum of the products of corresponding elements from the rows of the first matrix and the columns of the second. 
+The matrix produced by the zone-sum stage is multiplied by itself. Matrix multiplication combines two matrices by calculating the sum of the products of corresponding elements from the rows of the first matrix and the columns of the second. 
 
 **Example:**
 
@@ -76,8 +76,8 @@ The following table outlines the average execution time (calculated across 10 co
 *Hardware Context: Benchmarks were recorded on an AMD Ryzen 5, 6 Cores / 12 Threads, Windows 11 system.*
 
 ### Trade-off Analysis
-*   **Thread Spawning Overhead:** While parallel execution provides massive speed benefits for large datasets, managing threads introduces an OS-level performance cost. Spawning and destroying a thread requires system calls and context switching. For very small matrices, this overhead can make the multithreaded version slower than a sequential solution. However, as matrix dimensions scale, the computational workload dwarfs thread creation cost, resulting in increased performance for multithreaded architectures.
-*   **Memory Access Patterns & Contiguity:** Standard matrix multiplication using 2D std::vector structures forces the CPU to chase pointers across fragmented memory, incurring cache misses. To resolve this, the algorithm first flattens 2D structures into contiguous 1D arrays. 
+*   **Thread Management Overhead:** Creating threads introduces an initial cost. This implementation uses a thread pool: a group of worker threads created once and reused across operations. Assigning work to these threads and waiting for them to finish each stage still adds overhead, which can outweigh the benefits of parallel execution for small matrices. For larger matrices, the benefits of parallel processing are more likely to outweigh this overhead.
+*   **Memory Access Patterns & Contiguity:** The source matrix is copied from a nested `std::vector` into a contiguous 1D array before processing. The zone-sum stage also produces a transposed copy of its result, allowing the multiplication stage to read both input operands sequentially within each dot product.
 *   **Cache Blocking (Tiling):** The multiplication algorithm divides the work into blocks of up to 64 × 64 elements, accumulating each output block over smaller sections of the dot products. This is intended to improve cache locality by reusing matrix values within each block before moving on.
 
 ---
