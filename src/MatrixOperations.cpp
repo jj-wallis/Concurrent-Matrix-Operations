@@ -214,7 +214,7 @@ inline void matrixMultiplyHelper(const double* flatZS, const double* flatZS_tran
         // This improves the compute to memory fetch ratio by reusing loaded data
         for (; j <= jMax - 4; j += 4)
         {
-            // Get pointers to 4 corresponding columns stored
+            // Pointers to 4 columns
             const double* rowB0 = &flatZS_transposed[(j + 0) * dim];
             const double* rowB1 = &flatZS_transposed[(j + 1) * dim];
             const double* rowB2 = &flatZS_transposed[(j + 2) * dim];
@@ -256,15 +256,14 @@ inline void matrixMultiplyHelper(const double* flatZS, const double* flatZS_tran
 
 // =================================================================================
 // Worker: Tiled Matrix Multiplication
-// Multiplies flatZS by flatZS_transposed using L1 cache-sized tiles
-// writing the result directly into the final dstMatrix.
+// Multiplies flatZS by itself using cache tiled multiplication
 // =================================================================================
 void matrixMultiplyWorker(const double* flatZS, const double* flatZS_transposed, std::vector<std::vector<double>>* dstMatrix, 
     const int startRow, const int endRow, 
     const int dim, 
     barrier* syncBarrier)
 {
-    // Define the tile size to fit data within the CPU's L1 cache 
+    // Define the tile size
     const int tile_size = 64;
 
     // Zero the destination matrix 
