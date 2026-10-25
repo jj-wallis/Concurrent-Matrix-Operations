@@ -24,7 +24,7 @@ Matrix transposition reflects a matrix across its main diagonal, converting an m
 | 4 | 8 | 12 | 16 |
 
 ## 2. Zone Sum
-Each cell in the destination matrix contains the sum of the corresponding cell in the source matrix and its surrounding neighbours, including diagonal neighbours. Only cells within the matrix boundaries are included: corner cells have three neighbours, non-corner edge cells have five, and interior cells have eight. The destination matrix has the same dimensions as the source matrix.
+Each cell in the destination matrix contains the sum of the corresponding cell in the source matrix and its surrounding neighbours. Only cells within the matrix boundaries are included: corner cells have three neighbours, non-corner edge cells have five, and interior cells have eight. The destination matrix has the same dimensions as the source matrix.
 
 **Example:**
 
