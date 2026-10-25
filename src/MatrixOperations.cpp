@@ -22,7 +22,7 @@ void matrixOperationsInit(std::vector<std::vector<double>>* srcMatrix, std::vect
     // Get dimensions of the src matrix
     const int dim = srcMatrix->size();
 
-    // Allocate memory for flattened arrays using smart pointers to guarantee exception safety
+    // Allocate memory for flattened arrays using smart pointers
     std::unique_ptr<double[]> flatSrc = std::make_unique<double[]>(dim * dim); // Source matrix
     std::unique_ptr<double[]> flatZS = std::make_unique<double[]>(dim * dim); // Result of zone sum
     std::unique_ptr<double[]> flatZS_transposed = std::make_unique<double[]>(dim * dim); // Result of zone sum and transpose
