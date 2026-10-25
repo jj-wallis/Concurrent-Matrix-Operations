@@ -2,7 +2,7 @@
 
 <img width="1000" height="700" alt="matrix_benchmark" src="https://github.com/user-attachments/assets/a8bddf81-4c3b-4054-8868-b879f997ff6f" />
 
-A high-performance C++ application implementing three core matrix operations: transposition, zone summation, and self-multiplication. Each operation has been parallelised to accelerate execution. The three operations are defined as follows:
+A high-performance C++ pipeline implementing three core matrix operations: transposition, zone summation, and self-multiplication. Each operation has been parallelised to accelerate execution. The three operations are defined as follows:
 
 ## 1. Matrix Transposition
 Matrix transposition reflects a matrix across its main diagonal, converting an m x n matrix into an n x m matrix by swapping its rows with its columns.
@@ -24,12 +24,7 @@ Matrix transposition reflects a matrix across its main diagonal, converting an m
 | 4 | 8 | 12 | 16 |
 
 ## 2. Zone Sum
-The value of a single cell in the source matrix is summed with its neighbouring cells in the destination
-matrix. Corner values in the destination matrix result from the sum of the corner value and its three
-neighbours from the source matrix. Values along the sides of the destination matrix are the result of the
-sum of the corresponding value in the source matrix with its five neighbouring values. Consequently,
-central values result from the sum of the corresponding value in the source matrix with its 8 neighbours.
-The destination matrix retains the same size as the source matrix.
+Each cell in the destination matrix contains the sum of the corresponding cell in the source matrix and its surrounding neighbours, including diagonal neighbours. Only cells within the matrix boundaries are included: corner cells have three neighbours, non-corner edge cells have five, and interior cells have eight. The destination matrix has the same dimensions as the source matrix.
 
 **Example:**
 
@@ -71,7 +66,7 @@ Matrix multiplication combines two matrices by calculating the sum of the produc
 
 ## Performance Benchmarks
 
-The following table outlines the average execution time (calculated across 10 consecutive runs) for processing a 1024 x 1024 matrix. 
+The following table outlines the average execution time (calculated across 10 consecutive runs) for processing the full pipeline for a 1024 x 1024 matrix. 
 
 | Implementation | Execution Time (ms) | Speed-up |
 | :--- | :--- | :--- |
@@ -82,8 +77,8 @@ The following table outlines the average execution time (calculated across 10 co
 
 ### Trade-off Analysis
 *   **Thread Spawning Overhead:** While parallel execution provides massive speed benefits for large datasets, managing threads introduces an OS-level performance cost. Spawning and destroying a thread requires system calls and context switching. For very small matrices, this overhead can make the multithreaded version slower than a sequential solution. However, as matrix dimensions scale, the computational workload dwarfs thread creation cost, resulting in increased performance for multithreaded architectures.
-*   **Memory Access Patterns & Contiguity:** Standard matrix multiplication using 2D std::vector structures forces the CPU to chase pointers across fragmented memory, incurring cache misses. To resolve this, the algorithm first flattens 2D structures into contiguous 1D arrays. Furthermore, the second matrix (used for self multiplication) is explicitly transposed during the zone sum phase, ensuring that the subsequent dot-products can be calculated using strictly sequential, hardware-friendly row-major reads.
-*   **L1 Cache Tiling:** Even with contiguous and transposed memory, processing entire rows of massive matrices linearly can quickly overflow the CPU's cache boundaries. To prevent this, the core multiplication algorithm utilises a 64x64 blocked tiling technique. By subdividing the workload into localised blocks, the algorithm restricts active working data to fit entirely within L1 cache.
+*   **Memory Access Patterns & Contiguity:** Standard matrix multiplication using 2D std::vector structures forces the CPU to chase pointers across fragmented memory, incurring cache misses. To resolve this, the algorithm first flattens 2D structures into contiguous 1D arrays. 
+*   **Cache Blocking (Tiling):** The multiplication algorithm divides the work into blocks of up to 64 × 64 elements, accumulating each output block over smaller sections of the dot products. This is intended to improve cache locality by reusing matrix values within each block before moving on.
 
 ---
 
